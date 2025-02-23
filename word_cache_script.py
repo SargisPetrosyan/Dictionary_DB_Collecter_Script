@@ -1,6 +1,7 @@
 import logging
 from word_requests import GetWord
 
+import hishel
 
 #create logger
 logger = logging.getLogger('__name__')
@@ -24,8 +25,7 @@ def get_word(file_name: str) :
 def get_word():        
     for word in get_word(file_name=file_name):
         return word
-
-
+    
 
 
     

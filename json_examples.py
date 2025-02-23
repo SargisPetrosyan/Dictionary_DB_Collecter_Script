@@ -1,4 +1,4 @@
-phrases_response ='''
+phrases_response = \
 [
   {
     "count": 2904,
@@ -22,9 +22,8 @@ phrases_response ='''
     "wlmi": 16.013945120124845
   },
 ]
-'''
 
-examples_response ='''
+examples_response = \
 {
   "examples": [
     {
@@ -97,9 +96,9 @@ examples_response ='''
     }
   ]
 }
-'''
+ 
 
-definition_response ='''
+definition_response = \
 [
   {
     "id": "D5333900-1",
@@ -164,9 +163,9 @@ definition_response ='''
     "textProns": []
   }
 ]
-'''
 
-audio_response = '''
+
+audio_response =  \
 [
   {
     "commentCount": 0,
@@ -190,7 +189,7 @@ audio_response = '''
     "audioType": "pronunciation",
     "attributionText": "from The American Heritage® Dictionary of the English Language, 5th Edition",
     "attributionUrl": "https://www.wordnik.com/words/do",
-    "fileUrl": "hello"
+    "fileUrl": ""
   },
   {
     "commentCount": 0,
@@ -205,4 +204,4 @@ audio_response = '''
     "fileUrl": ""
   }
 ]
-'''
+ 
