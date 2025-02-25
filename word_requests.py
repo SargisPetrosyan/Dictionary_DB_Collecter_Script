@@ -1,5 +1,7 @@
 import httpx
 
+from validation import Validator
+
 import logging
 
 API_KEY = 'baw9pp5ghw4ffoewy3ovzfjnvdh4cco2eud5qcx6zcfx2218i'
@@ -15,7 +17,7 @@ class GetWord:
             with httpx.Client() as client:
                 response = client.get(url, params=params)
                 response.raise_for_status()
-                logger.info(f"request DONE SUCCESSFUL!!!")
+                logger.info(f"word request code is 200 DONE SUCCESSFUL!!!")
                 return response.json()
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP {e.response.status_code}: {e.response.text}")
@@ -25,22 +27,31 @@ class GetWord:
             return{"error": f"Request failed: {e}"}
         
     @staticmethod
-    def get_word_definitions(word: str) -> dict:
+    def get_word_definitions(word: str) -> list[dict]:
         url = f"{BASE_URL}/word.json/{word}/definitions"
 
+        logger.info(f"word '{word}' request")
         # request settings
         params = {
-        'limit': 5,
+        'limit': 20,
         'includeRelated': 'false',
         'useCanonical': 'true',
         'includeTags': 'false',
         'api_key': API_KEY
         }
+        
+        # GetWord function handling request with error
+        definition_response = GetWord.fetch_data(url=url,params=params)
 
-        return GetWord.fetch_data(url=url,params=params)
+        logger.info(f"word '{word}' validation started")
+        
+        # validation definition
+        validation = Validator.definition_validator(definition_response)
+
+        return validation
     
     @staticmethod
-    def get_word_audio(word: str) -> dict:
+    def get_word_audio(word: str) -> list[dict]:
         url = f"{BASE_URL}/word.json/{word}/definitions"
 
         # request settings
@@ -59,7 +70,7 @@ class GetWord:
         url = f"{BASE_URL}/word.json/{word}/examples"
 
         params = {
-        'limit': 5,
+        'limit': 20,
         'includeRelated': 'false',
         'useCanonical': 'true',
         'includeTags': 'false',
@@ -67,3 +78,20 @@ class GetWord:
         }
 
         return GetWord.fetch_data(url=url,params=params)
+    
+    @staticmethod
+    def get_word_audio(word: str) -> list[dict]:
+        url = f"{BASE_URL}/word.json/{word}/definitions"
+
+        # request settings
+        params = {
+        'limit': 20,
+        'useCanonical': 'true',
+        'api_key': API_KEY
+        }
+
+        return GetWord.fetch_data(url=url,params=params)
+
+
+if __name__=='__main__':
+    GetWord.get_word_definitions(word='apple')

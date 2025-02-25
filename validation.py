@@ -7,6 +7,8 @@ from pydantic import (
     HttpUrl
 )
 
+from functools import wraps
+
 
 from json_examples import (
     examples_response, phrases_response, definition_response, audio_response
@@ -55,7 +57,7 @@ class ExampleValidator(BaseModel):
         return value
     
 class DefinitionsValidator(BaseModel):
-    text: str = Field(min_length = 1, max_length=50)
+    text: str = Field(min_length = 1,)
     partOfSpeech: str = Field(title='part_of_speech', min_length = 1, max_length=50)
     
     
@@ -63,7 +65,7 @@ class DefinitionValidator(BaseModel):
     definitions: list[DefinitionsValidator]
     
     @model_validator(mode='before')
-    def empty_validate(cls, value: list[dict] ) -> list[dict]:
+    def empty_validate(cls, value: list[dict] ) -> dict:
         
         logger.info('checking definition empty text before validation')
         
@@ -89,7 +91,7 @@ class PhrasesValidator(BaseModel):
     gram2: str = Field(min_length = 1, max_length=50)
     count: int 
         
-class PhrasesValidator(BaseModel):
+class PhraseValidator(BaseModel):
     phrases: list[PhrasesValidator]
     
     @model_validator(mode='before')
@@ -115,13 +117,13 @@ class PhrasesValidator(BaseModel):
         return value
     
     
-class AudiosValidation(BaseModel):
+class AudiosValidator(BaseModel):
     fileUrl: HttpUrl = Field(title = 'file_url')
     
-    
-class AudioValidator(BaseModel):
-    audios: list[AudiosValidation]
 
+class AudioValidator(BaseModel):
+    audios: list[AudiosValidator]
+    
     @model_validator(mode='before')
     def empty_validate(cls, value: dict[list] ) -> dict[list]:
         
@@ -142,27 +144,44 @@ class AudioValidator(BaseModel):
         logger.info(f"url data validated, urls count: {len(value['audios'])}")   
         return value
 
-if __name__=='__main__':
-    try:
-        # Definition validation
-        # wrap definition to response data for model_validate
-        definition_wrapped = {'definitions': definition_response }
-        definition_validated =DefinitionValidator.model_validate(definition_wrapped) 
+# validation error decorator
+def handle_validation_error(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValidationError as e:
+            logger.error(f"validation error as {e}")
+    return wrapper
 
-        # Phrases validation
-        phrases_warped = {'phrases': phrases_response}
-        phrases_validated =PhrasesValidator.model_validate(phrases_warped) 
-        
-        # Examples validation
-        examples_validate = ExampleValidator.model_validate(examples_response)
-        
-        # Audio validation
-        audios_warped = {'audios': audio_response}
-        audios_validated =AudioValidator.model_validate(audios_warped)
 
-        
-        
-    except ValidationError as e:
-        logger.error(f"validation error {e}")
-        pass
+class Validator:
+    @handle_validation_error
+    @staticmethod
+    def definition_validator(data: list[dict]) -> DefinitionsValidator :
+        definition_wrapped = {'definitions': data }
+        return DefinitionValidator.model_validate(definition_wrapped)
+    
+    @handle_validation_error
+    @staticmethod
+    def examples_validator(data: dict) -> ExamplesValidator :
+        example_wrapped = {'examples': data }
+        return ExampleValidator.model_validate(example_wrapped)
+    
+    @handle_validation_error
+    @staticmethod
+    def phrase_validator(data: list[dict]) -> PhrasesValidator :
+        phrase_wrapped = {'phrase': data }
+        return PhraseValidator.model_validate(phrase_wrapped)
+    
+    @handle_validation_error
+    @staticmethod
+    def audio_validator(data: list[dict]) -> AudiosValidator :
+        audio_wrapped = {'audio': data }
+        return AudioValidator.model_validate(audio_wrapped)
+          
+    
+
+# if __name__=='__main__':
+#     Validator.definition_validator(data=definition_response)
     
