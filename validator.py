@@ -1,9 +1,11 @@
 from pydantic import (
     AnyUrl,
     BaseModel,
-    model_validator
-    ValueError
-) 
+    ValidationError,
+    model_validator,
+    Field
+)
+
 
 from json_examples import (
     examples_response, phrases_response, definition_response, audio_response
@@ -22,64 +24,74 @@ formater = logging.Formatter('%(levelname)s - %(message)s')
 # register handler
 stream.setFormatter(formater)
 logger.addHandler(stream)
-
-
-class WordValidator(BaseModel):
-    text: str | None = None
-     
-# class DefinitionValidator(BaseModel):
-#     text: str | None = None
-#     partOfSpeech: str | None = None
     
-#     @model_validator(mode='before')
-#     def check_model_structure(cls, value):
-#         if 'text' not in value or 'partOfSpeech' not in value:
-#             return None
-        
-#         if not isinstance(
-#             value.get('text', ''), str) or \
-#             not isinstance(value.get('partOfSpeech', ''), str):
-#             return None 
-        
 class ExamplesValidator(BaseModel):
-    text: str | None = None
-    
-    
-class PhraseValidator(BaseModel):
-    gram1: str | None = None
-    gram2: str | None = None
+    text: str = Field(min_length = 1)
+    word: str = Field(min_length = 1, max_length = 50)
     
     
 class ExampleValidator(BaseModel):
-    examples: list[ExamplesValidator] | None
-
+    examples: list[ExamplesValidator]
     
-class AudioValidator(BaseModel):
-    fileUrl: AnyUrl | None = None
+    @model_validator(mode='before')
+    def empty_validate(cls, value: dict[list] ) -> dict[list]:
+        
+        logger.info('checking empty text before validation')
+        
+        """Filter out any examples with an empty 'text' field before validation."""
+        examples = value.get('examples',[])
+        
+        # Filter out examples with empty 'text' before passing to validation
+        filtered_examples = [ex for ex in examples if ex.get('text')]
+        
+        value['examples'] = filtered_examples
     
-class SynonymValidator(BaseModel):
-    text: str
- 
-class AntonymValidator(BaseModel):
-    text: str
-
-
+        if not value['examples']:
+            logger.error(f"word: has no explanation data")
+            raise ValueError("response data has no examples data.")
+        
+        logger.info(f"examples validated, examples count: {len(value['examples'])}")   
+        return value
+    
+class DefinitionsValidator(BaseModel):
+    text: str = Field(min_length = 1)
+    partOfSpeech: str = Field(min_length = 1)
+    
+class DefinitionValidator(BaseModel):
+    definitions: list[DefinitionsValidator]
+    
+    @model_validator(mode='before')
+    def empty_validate(cls, value: dict[list] ) -> dict[list]:
+        
+        logger.info('checking empty text before validation')
+        
+        """Filter out any definition with an empty 'text' field before validation."""
+        definition = value.get('definition',[])
+        
+        # Filter out examples with empty 'text' before passing to validation
+        filtered_definition = [i for i in definition if i.get('text')]
+        
+        value['definition'] = filtered_definition
+    
+        if not value['definition']:
+            logger.error(f"word: has no explanation data")
+            raise ValueError("response data has no definition data.")
+        
+        logger.info(f"definition validated, definition count: {len(value['definition'])}")   
+        return value
+    
+    
 if __name__=='__main__':
+    try:
+        definition_wrapped = {'definitions': definition_response }
+        definition_validated =DefinitionValidator.model_validate(definition_wrapped) 
+        print(definition_validated)
+        
+        # examples_validate = ExampleValidator.model_validate(examples_response)
+        # print(examples_validate)
+        
+        
+    except ValidationError as e:
+        logger.error(f"validation error {e}")
+        pass
     
-    # for example in examples_response:
-    #     result = ExampleValidator(**example)
-    #     print(result)
-    #     break
-    
-    # for definition in definition_response:
-    #     result = DefinitionValidator(**definition)
-    #     print(result)
-    
-    # for audio in audio_response:
-    #     result = AudioValidator(**audio)
-    #     print(result)
-
-    
-    for phrases in phrases_response:
-        result = PhraseValidator(**phrases)
-        print(result)
