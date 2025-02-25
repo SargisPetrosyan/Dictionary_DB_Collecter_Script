@@ -189,7 +189,7 @@ audio_response =  \
     "audioType": "pronunciation",
     "attributionText": "from The American Heritage® Dictionary of the English Language, 5th Edition",
     "attributionUrl": "https://www.wordnik.com/words/do",
-    "fileUrl": ""
+
   },
   {
     "commentCount": 0,
